@@ -3,38 +3,38 @@ var Router = function() {
     var stack = [];
 
     var routes = {
-        'get': {},
-        'post': {},
-        'put': {},
-        'delete': {}
+        'GET': {},
+        'POST': {},
+        'PUT': {},
+        'DELETE': {}
     }
 
     /**
      * Define a new GET route
      */
     this.get = function(url, fnc) {
-        routes['get'][ stack.join('') + url ] = fnc;
+        routes['GET'][ stack.join('') + url ] = fnc;
     }
 
     /**
      * Define a new POST route
      */
     this.post = function(url, fnc) {
-        routes['post'][ stack.join('') + url ] = fnc;
+        routes['POST'][ stack.join('') + url ] = fnc;
     }
 
     /*
      * Define a new PUT route
      */
     this.put = function(url, fnc) {
-        routes['put'][ stack.join('') + url ] = fnc;
+        routes['PUT'][ stack.join('') + url ] = fnc;
     }
 
     /*
      * Define a new DELETE route
      */
     this.delete = function(url, fnc) {
-        routes['delete'][ stack.join('') + url ] = fnc;
+        routes['DELETE'][ stack.join('') + url ] = fnc;
     }
 
     /*
@@ -49,16 +49,46 @@ var Router = function() {
     /*
      * Returns the content of a route
      */
-    this.run = function(method, url) {
-        return routes[method][url]();
+    this.run = function(method, url, request, response) {
+        if(routes[method] && routes[method][url])
+                return routes[method][url](request, response);
+        return null;
     }
 
     /*
      * Handle the request and the response
      */
     this.handle = function(request, response) {
-        
+        var content = this.run(request.method, request.url, request, response);
+
+        if(content)
+            this.respond(response, content);
+        else
+            this.routeNotFound(response);
     }
+
+    /*
+     * Write the content to the response
+     */
+    this.respond = function(response, content) {
+        if(typeof content === 'string' || content instanceof String) {
+            response.writeHeader(200, {"Content-Type": "text/html"});  
+            response.write(content);  
+            response.end();  
+        } else {
+            response.writeHead(200, {'content-type': 'text/json'});
+            response.end(JSON.stringify(content));
+        }
+    }
+
+    /*
+     * When a route is not found, this method is called
+     */
+     this.routeNotFound = function(response) {
+        response.writeHead(404, {"Content-Type": "text/plain"});
+        response.write("404 Not Found\n");
+        response.end();
+     }
 
 }
 
